@@ -1,0 +1,24 @@
+8 Key programming languages from oldest to newest
+1. C (1972)  
+   Fact: C was created for the UNIX operating system and remains the foundation for many modern languages.  
+
+2. C++ (1983)  
+   Fact: Originally called “C with Classes,” it added object-oriented programming to C.  
+
+3. Python (1991)  
+   Fact: Python is named after the British comedy group “Monty Python,” not the snake.  
+
+4. Java (1995)  
+   Fact: Initially called “Oak,” it was later renamed “Java,” inspired by coffee.  
+
+5. JavaScript (1995)  
+   Fact: It was created in just 10 days by Brendan Eich and was initially called Mocha.  
+
+6. Ruby (1995)  
+   Fact: Ruby was designed for developer happiness and productivity, blending features of Perl and Smalltalk.  
+
+7. PHP (1995)  
+   Fact: PHP originally stood for “Personal Home Page” and is now widely used for web development.  
+
+8. Swift (2014)  
+   Fact: Developed by Apple, Swift aims to be safer and faster than Objective-C.  
