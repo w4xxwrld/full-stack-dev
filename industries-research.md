@@ -1,4 +1,4 @@
-# dev-core-101
+5 industries and the apps
 #1 Trading - Binance, Forex
 #2 Social - Instagram, Telegram
 #3 Reverse Engineering - Hopper Disassembler, Binary Ninja
