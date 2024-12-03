@@ -114,7 +114,7 @@ def random_city_event():
 def ocean_exploration():
     global user_level
     typewriter("You explore the mysterious depths of the ocean.")
-    if random.random() < 0.1:  # 10% probability to find a treasure map
+    if random.random() < 1:  # 10% probability to find a treasure map
         typewriter("You find a treasure map!")
         if inventory:
             typewriter("You can use this map to go on a treasure hunt, but it will cost all your items.")

@@ -1,0 +1,11 @@
+1. Buy domain on any domain registrar
+
+2. Buy virtual machine with minimal specs and run it on Linux 
+
+3. Install nginx on the server and link your VM's IP address to your domain name
+
+4. Install SSL using Let's Encrypt and apply certificate to your domain name
+
+5. Deploy your webpage onto the server (me personally was using git clone) soon will make it get up-to-date itself automatically
+
+6. Congrats! You hosted your first website to the big worldwide web! 
