@@ -9,7 +9,7 @@ app = FastAPI()
 def read_root():
     return {"Hello": "World"}
 
-@app.get("/health")
+@app.get("/health") #endpoint to check if api works
 def read_health():
     return {"status": "200"}
 
