@@ -1,3 +1,4 @@
+import bcrypt
 from typing import Union
 from pydantic import BaseModel, EmailStr
 from fastapi import FastAPI, HTTPException
@@ -18,6 +19,7 @@ class UserResponse(BaseModel):
     id: int
     name: str
     email: EmailStr
+    password: str
     role: str
 
 @app.get("/")
@@ -32,11 +34,12 @@ async def health_check():
 def register_user(name: str, email: str, password: str, role: str = "user"):
     if any(u["email"] == email for u in users):
         return {"error": "Email already exists"}
+    hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
     new_user = {
         "id": len(users) + 1,
         "name": name,
         "email": email,
-        "password": password,
+        "password": hashed_password,
         "role": role,
     }
     users.append(new_user)
@@ -45,7 +48,7 @@ def register_user(name: str, email: str, password: str, role: str = "user"):
 @app.post("/auth/login")
 def login_user(email: str, password: str):
     user = next((u for u in users if u["email"] == email), None)
-    if not user or user["password"] != password:
+    if not bcrypt.checkpw(password.encode('utf-8'), user["password"].encode('utf-8')):
         return {"error": "Invalid email or password"}
     
     return {"message": f"Welcome, {user['name']}"}
