@@ -34,6 +34,14 @@ def verify_access_token(token: str):
         print(f"JWT Error: {e}")
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
+def check_user_role(token_data: dict, required_role: str):
+    user_role = token_data.get("role")
+    if user_role != required_role:
+        raise HTTPException(
+            status_code=403,
+            detail=f"Access denied: requires {required_role} role"
+        )
+
 class UserRequest(BaseModel):
     name: str
     email: EmailStr
@@ -92,6 +100,18 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         "name": user_data["name"],
         "role": user_data["role"]
     }
+
+@app.get("/admin")
+def admin_route(token: str = Depends(oauth2_scheme)):
+    user_data = verify_access_token(token)
+    check_user_role(user_data, "admin")
+    return {"message": "Welcome, Admin! You have full access."}
+
+@app.get("/user-resource")
+def user_resource(token: str = Depends(oauth2_scheme)):
+    user_data = verify_access_token(token)
+    check_user_role(user_data, "user")
+    return {"message": f"Welcome, {user_data['name']}! This resource is for users only."}
 
 @app.get("/users/", response_model=list[UserResponse])
 def read_users():
