@@ -17,7 +17,14 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 SECRET_KEY = "abc"
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = 5
+REFRESH_TOKEN_EXPIRE_DAYS = 1
+
+def create_refresh_token(data: dict):
+    to_encode = data.copy()
+    expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 def create_access_token(data: dict):
     to_encode = data.copy()
@@ -83,9 +90,30 @@ def login_user(email: str, password: str):
     if not user or not bcrypt.checkpw(password.encode('utf-8'), user["password"].encode('utf-8')):
         return {"error": "Invalid email or password"}
     
-    token = create_access_token({"sub": user["email"], "role": user["role"], "name": user["name"]})
-    print(f"Generated Token: {token}")
-    return {"access_token": token, "token_type": "bearer"}
+    access_token = create_access_token({"sub": user["email"], "role": user["role"], "name": user["name"]})
+    refresh_token = create_refresh_token({"sub": user["email"]})
+    
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token
+    }
+
+@app.post("/auth/refresh")
+def refresh_access_token(refresh_token: str):
+    try:
+        payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        email = payload.get("sub")
+        if not email:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        
+        new_access_token = create_access_token({"sub": email})
+        return {"access_token": new_access_token}
+    
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Refresh token expired")
+    except jwt.JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
 
 @app.get("/protected")
 def protected_route(token: str = Depends(oauth2_scheme)):
