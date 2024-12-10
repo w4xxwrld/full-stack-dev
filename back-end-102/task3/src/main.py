@@ -1,6 +1,7 @@
 import bcrypt
 from jose import jwt
-from typing import Union
+from uuid import uuid4
+from typing import Union, Optional
 from pydantic import BaseModel, EmailStr
 from datetime import datetime, timedelta
 from fastapi import FastAPI, Depends, HTTPException
@@ -13,18 +14,22 @@ users = [
     {"id": 2, "name": "Anuar", "email": "anuar@example.com", "password": "12341234", "role": "user"}
 ]
 
+active_refresh_tokens = {}
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
-SECRET_KEY = "abc"
+SECRET_KEY = "BaVArIanMotORWorKs3PoInT5LIterTwINTUrBo"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 5
 REFRESH_TOKEN_EXPIRE_DAYS = 1
 
-def create_refresh_token(data: dict):
-    to_encode = data.copy()
+def create_refresh_token(email: str):
+    token_id = str(uuid4())  
     expire = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    to_encode = {"sub": email, "id": token_id, "exp": expire}
+    refresh_token = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    active_refresh_tokens[token_id] = {"email": email, "expires_at": expire}
+    return refresh_token
 
 def create_access_token(data: dict):
     to_encode = data.copy()
@@ -53,6 +58,11 @@ class UserRequest(BaseModel):
     name: str
     email: EmailStr
     role: str
+
+class UserUpdate(BaseModel):
+    name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    role: Optional[str] = None
 
 class UserResponse(BaseModel):
     id: int
@@ -90,8 +100,12 @@ def login_user(email: str, password: str):
     if not user or not bcrypt.checkpw(password.encode('utf-8'), user["password"].encode('utf-8')):
         return {"error": "Invalid email or password"}
     
+    tokens_to_revoke = [key for key, value in active_refresh_tokens.items() if value["email"] == email]
+    for token_id in tokens_to_revoke:
+        del active_refresh_tokens[token_id]
+    
     access_token = create_access_token({"sub": user["email"], "role": user["role"], "name": user["name"]})
-    refresh_token = create_refresh_token({"sub": user["email"]})
+    refresh_token = create_refresh_token(user["email"])
     
     return {
         "access_token": access_token,
@@ -102,12 +116,20 @@ def login_user(email: str, password: str):
 def refresh_access_token(refresh_token: str):
     try:
         payload = jwt.decode(refresh_token, SECRET_KEY, algorithms=[ALGORITHM])
+        token_id = payload.get("id")
         email = payload.get("sub")
-        if not email:
-            raise HTTPException(status_code=401, detail="Invalid token")
-        
+
+        if token_id not in active_refresh_tokens:
+            raise HTTPException(status_code=401, detail="Refresh token is not active")
+
+        del active_refresh_tokens[token_id]
         new_access_token = create_access_token({"sub": email})
-        return {"access_token": new_access_token}
+        new_refresh_token = create_refresh_token(email)
+        
+        return {
+            "access_token": new_access_token,
+            "refresh_token": new_refresh_token
+        }
     
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Refresh token expired")
@@ -160,13 +182,16 @@ def read_user_by_id(user_id: int):
     raise HTTPException(status_code=404, detail="User not found")
 
 @app.put("/users/{user_id}")
-def update_user(user_id: int, user_name: str, user_email: EmailStr, user_role: str):
+def update_user(user_id: int, user_update: UserUpdate):
     for user in users:
         if user["id"] == user_id:
-            user["name"] = user_name
-            user["email"] = user_email
-            user["role"] = user_role
-            return {"message": "User updated successfully!"}
+            if user_update.name is not None:
+                user["name"] = user_update.name
+            if user_update.email is not None:
+                user["email"] = user_update.email
+            if user_update.role is not None:
+                user["role"] = user_update.role
+            return {"message": "User updated successfully!", "user": user}
     raise HTTPException(status_code=404, detail="User not found")
 
 @app.delete("/users/{user_id}")
