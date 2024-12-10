@@ -112,6 +112,17 @@ def login_user(email: str, password: str):
         "refresh_token": refresh_token
     }
 
+@app.post("/auth/logout")
+def logout_user(token: str = Depends(oauth2_scheme)):
+    payload = verify_access_token(token)
+    email = payload.get("sub")
+    
+    tokens_to_revoke = [key for key, value in active_refresh_tokens.items() if value["email"] == email]
+    for token_id in tokens_to_revoke:
+        del active_refresh_tokens[token_id]
+    
+    return {"message": "Successfully logged out"}
+
 @app.post("/auth/refresh")
 def refresh_access_token(refresh_token: str):
     try:
