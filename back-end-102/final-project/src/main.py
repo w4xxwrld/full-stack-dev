@@ -1,11 +1,21 @@
-import bcrypt
+import os
 import jwt
+import bcrypt
 from uuid import uuid4
+from dotenv import load_dotenv
 from typing import Union, Optional, List
 from pydantic import BaseModel, EmailStr
 from datetime import datetime, timedelta
-from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import OAuth2PasswordBearer
+from fastapi import FastAPI, Depends, HTTPException
+from models import UserUpdate, UserResponse, ProjectUpdate, Project, TaskUpdate, Task
+
+load_dotenv()
+
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))  
+REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS")) 
 
 app = FastAPI()
 
@@ -21,11 +31,6 @@ tasks = []
 active_refresh_tokens = {}
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
-
-SECRET_KEY = "BaVArIanMotORWorKs3PoInT5LIterTwINTUrBo"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 5
-REFRESH_TOKEN_EXPIRE_DAYS = 1
 
 def create_refresh_token(email: str):
     token_id = str(uuid4())  
@@ -57,42 +62,6 @@ def check_user_role(token_data: dict, required_role: str):
             status_code=403,
             detail=f"Access denied: requires {required_role} role"
         )
-
-class UserUpdate(BaseModel):
-    name: Optional[str] = None
-    email: Optional[EmailStr] = None
-    role: Optional[str] = None
-
-class UserResponse(BaseModel):
-    id: int
-    name: str
-    email: EmailStr
-    password: str
-    role: str
-
-class ProjectUpdate(BaseModel):
-    name: Optional[str] = None
-    description: Optional[str] = None
-    owner_email: Optional[EmailStr] = None
-
-class Project(BaseModel):
-    id: int
-    name: str
-    description: str
-    owner_email: EmailStr
-
-class TaskUpdate(BaseModel):
-    title: Optional[str] = None
-    description: Optional[EmailStr] = None
-    status: Optional[str] = None
-    project_id: Optional[int] = None
-
-class Task(BaseModel):
-    id: int
-    title: str
-    description: str
-    status: str  # "Pending", "In Progress", "Completed"
-    project_id: int
 
 @app.get("/")
 def read_root():
