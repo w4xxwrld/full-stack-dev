@@ -38,3 +38,22 @@ CREATE TABLE order_items (
   product_price DECIMAL(11, 2) NOT NULL
 );
 
+INSERT INTO products (product_name, product_description, product_price, product_category, product_status)
+VALUES 
+('Espresso', 'Strong and black coffee', 2.50, 'Beverage', TRUE),
+('Latte', 'Coffee with steamed milk', 3.50, 'Beverage', TRUE),
+('Cappuccino', 'Coffee with steamed milk foam', 3.00, 'Beverage', TRUE);
+
+INSERT INTO customers (customer_name, customer_surname, customer_email, customer_phone)
+VALUES 
+('John', 'Doe', 'john.doe@example.com', '123-456-7890'),
+('Jane', 'Smith', 'jane.smith@example.com', '098-765-4321');
+
+INSERT INTO orders (customer_id, order_sum, order_status, payment_method)
+VALUES 
+(1, 6.00, TRUE, 'Credit Card');
+
+INSERT INTO order_items (order_id, product_id, product_quantity, product_price)
+VALUES 
+(1, 1, 1, 2.50),
+(1, 2, 1, 3.50);
